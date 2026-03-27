@@ -1,19 +1,28 @@
 services:
   haby:
-    image: zvijer1987/haby:latest
-    container_name: haby
-    restart: unless-stopped
-    ports:
-      - "50031:3000"
-    # Store the SQLite database and uploaded assets persistently.
+    image: zvijer1987/haby:latest        # Docker image from Docker Hub
+    container_name: haby                 # Container name
+    restart: unless-stopped              # Automatically restart unless stopped manually
+
+    # Persistent storage for application data (SQLite database and uploads)
     volumes:
-      - ./data:/data
-    # Optional runtime environment values.
-    environment:
-      NODE_ENV: production
-      PORT: 3000
-    # Basic container hardening.
+      - /path/to/haby/data:/data
+
+    # Temporary direct access for testing without reverse proxy
+    ports:
+      - "50055:3000"
+
+    # Basic container hardening
     security_opt:
       - no-new-privileges:true
-    # Graceful shutdown for cleaner restarts.
-    stop_grace_period: 20s
+
+    # Runtime environment configuration
+    environment:
+      NODE_ENV: production               # Enables production optimizations
+      PORT: 3000                         # Internal application port
+      TZ: Europe/Country                 # Timezone
+
+      # Cookie security behavior:
+      # false = allows HTTP (useful for local testing via IP:port)
+      # true  = requires HTTPS (recommended for production behind reverse proxy)
+      COOKIE_SECURE: "false"
