@@ -75,10 +75,12 @@ npm run dev --prefix app/server
 npm run dev --prefix app/client
 ```
 
-## Build for production
+## Docker image
+
+Pull the latest image from Docker Hub:
 
 ```bash
-docker build -t haby:latest .
+docker pull zvijer1987/haby:latest
 ```
 
 ## Docker Compose
@@ -90,7 +92,7 @@ Quick start:
 ```bash
 cp compose.yaml.example compose.yaml
 mkdir -p data
-docker compose up -d --build
+docker compose up -d
 ```
 
 ## Runtime data
@@ -118,11 +120,3 @@ Haby stores persistent runtime data in `/data` inside the container. The mounted
 ## Contributing
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for repository conventions and contribution notes.
-
-## Screenshots in README
-
-GitHub supports relative image paths in Markdown, which is why the screenshots are stored in `docs/screenshots` and referenced directly from this README.
-
-## Repository hygiene
-
-GitHub recommends including a README and often benefits from a license, contribution guidance, and a security policy for clearer project expectations and maintenance.
