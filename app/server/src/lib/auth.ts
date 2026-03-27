@@ -13,6 +13,10 @@ export type SessionUser = {
   updatedAt: string;
 };
 
+function useSecureCookies() {
+  return process.env.COOKIE_SECURE === 'true';
+}
+
 export function createSession(res: Response, userId: number) {
   const id = nanoid(40);
   db.prepare(
@@ -22,7 +26,7 @@ export function createSession(res: Response, userId: number) {
   res.cookie('haby_session', id, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: useSecureCookies(),
     maxAge: 30 * 24 * 60 * 60 * 1000,
     path: '/'
   });
@@ -31,7 +35,12 @@ export function createSession(res: Response, userId: number) {
 export function clearSession(req: Request, res: Response) {
   const sid = req.cookies?.haby_session;
   if (sid) db.prepare(`DELETE FROM sessions WHERE id = ?`).run(sid);
-  res.clearCookie('haby_session', { path: '/' });
+  res.clearCookie('haby_session', {
+    path: '/',
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: useSecureCookies()
+  });
 }
 
 export function getAuthUser(req: Request): SessionUser | null {
