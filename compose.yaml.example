@@ -1,32 +1,19 @@
 services:
   haby:
-    # Build the production image from the local repository.
-    build:
-      context: .
-      dockerfile: Dockerfile
-
-    # Friendly container name for a single-node deployment.
+    image: zvijer1987/haby:latest
     container_name: haby
-
-    # Start again automatically unless it is stopped manually.
     restart: unless-stopped
-
-    # Run the web app on the host.
     ports:
       - "50031:3000"
-
     # Store the SQLite database and uploaded assets persistently.
     volumes:
       - ./data:/data
-
     # Optional runtime environment values.
     environment:
       NODE_ENV: production
       PORT: 3000
-
     # Basic container hardening.
     security_opt:
       - no-new-privileges:true
-
     # Graceful shutdown for cleaner restarts.
     stop_grace_period: 20s
