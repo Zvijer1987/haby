@@ -44,14 +44,12 @@ RUN npm install --omit=dev --no-audit --no-fund --prefix /app/server && \
 COPY --from=builder /app/app/server/dist /app/server/dist
 COPY --from=builder /app/app/client/dist /app/client/dist
 
-# Create a fixed runtime user/group so mounted volumes match common self-hosted setups.
-RUN groupadd --gid 1000 appgroup && \
-    useradd --uid 1000 --gid 1000 --create-home --shell /usr/sbin/nologin appuser && \
-    mkdir -p /data && \
+# Prepare runtime directories for the existing non-root node user (uid/gid 1000).
+RUN mkdir -p /data && \
     chown -R 1000:1000 /app /data
 
-# Run as an unprivileged fixed UID/GID for predictable host volume permissions.
-USER 1000:1000
+# Run as the existing node user from the base image.
+USER node
 
 EXPOSE 3000
 CMD ["node", "/app/server/dist/index.js"]
