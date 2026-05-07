@@ -120,3 +120,51 @@ Haby stores persistent runtime data in `/data` inside the container. The mounted
 ## Contributing
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for repository conventions and contribution notes.
+
+## Update notes - v1.1.0
+
+### Repeatable habits and goals
+
+This release improves repeatable habits and goals.
+
+Repeatable cards now use period-based names:
+
+- Daily cards: Habit name (Day 1), Habit name (Day 2), ...
+- Weekly cards: Habit name (Week 1), Habit name (Week 2), ...
+- Monthly cards: Habit name (Month 1), Habit name (Month 2), ...
+
+When a new repeatable card is created for the next period, the previous card from the same repeat group is automatically archived. The dashboard keeps only the newest active repeatable card.
+
+### Icon picker
+
+The habit and goal icon picker now includes 5 rows of icons.
+
+### Runtime user change
+
+The container now runs as the standard Node.js user:
+
+- UID: 1000
+- GID: 1000
+
+This is better for most self-hosted bind mount setups where the mounted data folder is owned by the normal host user.
+
+Existing users who update from an older image may need to fix ownership of their mounted /data folder if they see this SQLite error:
+
+SqliteError: attempt to write a readonly database
+
+For bind-mounted data folders, run:
+
+    sudo docker stop haby
+    sudo chown -R 1000:1000 /path/to/haby/data
+    sudo chmod -R u+rwX,g+rwX /path/to/haby/data
+    sudo docker start haby
+
+Example for a local ./data folder:
+
+    sudo docker stop haby
+    sudo chown -R 1000:1000 ./data
+    sudo chmod -R u+rwX,g+rwX ./data
+    sudo docker start haby
+
+New installations using a normal user-owned bind mount should work without extra permission changes.
+

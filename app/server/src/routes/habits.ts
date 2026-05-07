@@ -46,19 +46,42 @@ function suffix(period: 'daily' | 'weekly' | 'monthly', index: number) {
   return ` (Day ${index})`;
 }
 
+function stripRepeatSuffix(value: string) {
+  return String(value || '').replace(/\s*\((Day|Week|Month)\s+\d+\)\s*$/i, '').trim();
+}
+
+function cleanRepeatBaseName(value: string, fallback = 'Haby') {
+  const clean = stripRepeatSuffix(value).trim();
+  return clean || fallback;
+}
+
 function ensureRepeatableHabitsForUser(userId: number) {
   const today = todayIso();
   const groups = db.prepare(`SELECT repeat_group FROM habits WHERE user_id = ? AND repeatable = 1 AND repeat_group <> '' GROUP BY repeat_group`).all(userId) as any[];
+
   for (const groupRow of groups) {
     const group = String(groupRow.repeat_group || '');
     if (!group) continue;
+
     const rows = db.prepare(`SELECT * FROM habits WHERE user_id = ? AND repeat_group = ? ORDER BY repeat_index ASC, id ASC`).all(userId, group) as any[];
     if (!rows.length) continue;
+
     const first = rows[0];
     const last = rows[rows.length - 1];
+    const period = (first.period || 'daily') as 'daily' | 'weekly' | 'monthly';
     const anchor = String(first.repeat_anchor_date || first.created_at?.slice?.(0, 10) || today);
-    const totalNeeded = periodDiff(first.period, anchor, today) + 1;
+    const baseName = cleanRepeatBaseName(first.repeat_base_name || first.name || 'Haby');
+    const totalNeeded = Math.max(1, periodDiff(period, anchor, today) + 1);
     let currentMax = Number(last.repeat_index || rows.length || 1);
+
+    for (const row of rows) {
+      const rowIndex = Math.max(1, Number(row.repeat_index || 1));
+      const expectedName = `${baseName}${suffix(period, rowIndex)}`;
+      if (row.name !== expectedName || row.repeat_base_name !== baseName) {
+        db.prepare(`UPDATE habits SET name = ?, repeat_base_name = ?, updated_at = ? WHERE user_id = ? AND id = ?`).run(expectedName, baseName, nowIso(), userId, row.id);
+      }
+    }
+
     while (currentMax < totalNeeded) {
       const nextIndex = currentMax + 1;
       const nextOrder = (db.prepare(`SELECT COALESCE(MAX(sort_order), -1) AS value FROM habits WHERE user_id = ?`).get(userId) as any).value + 1;
@@ -71,10 +94,10 @@ function ensureRepeatableHabitsForUser(userId: number) {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`
       ).run(
         userId,
-        `${first.repeat_base_name || first.name}${suffix(first.period, nextIndex)}`,
+        `${baseName}${suffix(period, nextIndex)}`,
         first.description || '',
         first.category_id || null,
-        first.period,
+        period,
         Number(first.target_count || 1),
         Number(first.expected_per_day || 1),
         first.icon || '⭐',
@@ -94,10 +117,16 @@ function ensureRepeatableHabitsForUser(userId: number) {
         nextOrder,
         group,
         nextIndex,
-        first.repeat_base_name || first.name,
+        baseName,
         anchor
       );
       currentMax = nextIndex;
+    }
+
+    const newest = db.prepare(`SELECT id FROM habits WHERE user_id = ? AND repeat_group = ? ORDER BY repeat_index DESC, id DESC LIMIT 1`).get(userId, group) as any;
+    if (newest?.id) {
+      db.prepare(`UPDATE habits SET is_archived = 1, updated_at = ? WHERE user_id = ? AND repeat_group = ? AND id <> ?`).run(nowIso(), userId, group, newest.id);
+      db.prepare(`UPDATE habits SET is_archived = 0, updated_at = ? WHERE user_id = ? AND id = ?`).run(nowIso(), userId, newest.id);
     }
   }
 }
@@ -220,7 +249,9 @@ router.post('/', (req, res) => {
   const nextOrder = (db.prepare(`SELECT COALESCE(MAX(sort_order), -1) AS value FROM habits WHERE user_id = ?`).get(user.id) as any).value + 1;
   const repeatable = body.repeatable ? 1 : 0;
   const repeatGroup = repeatable ? `grp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}` : '';
-  const repeatBaseName = String(body.name || '').trim();
+  const period = (body.period || 'daily') as 'daily' | 'weekly' | 'monthly';
+  const repeatBaseName = cleanRepeatBaseName(String(body.name || '').trim());
+  const habitName = repeatable ? `${repeatBaseName}${suffix(period, 1)}` : String(body.name || '').trim();
   db.prepare(
     `INSERT INTO habits (
       user_id, name, description, category_id, period, target_count, expected_per_day, icon, color, visualization,
@@ -230,10 +261,10 @@ router.post('/', (req, res) => {
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`
   ).run(
     user.id,
-    body.name,
+    habitName,
     body.description || '',
     body.categoryId || null,
-    body.period || 'daily',
+    period,
     Number(body.targetCount || 1),
     Math.max(1, Number(body.expectedPerDay || 1)),
     body.icon || '⭐',
@@ -266,16 +297,20 @@ router.put('/:id', (req, res) => {
   if (!existing) return res.status(404).json({ error: 'Habit not found' });
   const repeatable = body.repeatable ? 1 : 0;
   const repeatGroup = existing.repeat_group || (repeatable ? `grp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}` : '');
+  const period = (body.period || 'daily') as 'daily' | 'weekly' | 'monthly';
+  const repeatIndex = Math.max(1, Number(existing.repeat_index || 1));
+  const repeatBaseName = cleanRepeatBaseName(String(body.name || existing.repeat_base_name || existing.name));
+  const habitName = repeatable ? `${repeatBaseName}${suffix(period, repeatIndex)}` : String(body.name || '').trim();
   db.prepare(
     `UPDATE habits SET name = ?, description = ?, category_id = ?, period = ?, target_count = ?, expected_per_day = ?, icon = ?, color = ?,
       visualization = ?, card_background_type = ?, card_background_value = ?, card_overlay_opacity = ?,
       show_mini_calendar = ?, show_chart = ?, chart_type = ?, habit_type = ?, unit_label = ?, repeatable = ?, repeat_group = ?, repeat_base_name = ?, repeat_anchor_date = ?, updated_at = ?
       WHERE user_id = ? AND id = ?`
   ).run(
-    body.name,
+    habitName,
     body.description || '',
     body.categoryId || null,
-    body.period || 'daily',
+    period,
     Number(body.targetCount || 1),
     Math.max(1, Number(body.expectedPerDay || 1)),
     body.icon || '⭐',
@@ -291,7 +326,7 @@ router.put('/:id', (req, res) => {
     body.unitLabel || '',
     repeatable,
     repeatGroup,
-    String(body.name || existing.repeat_base_name || existing.name),
+    repeatBaseName,
     existing.repeat_anchor_date || todayIso(),
     nowIso(),
     user.id,
