@@ -338,8 +338,23 @@ router.put('/:id', (req, res) => {
 
 router.delete('/:id', (req, res) => {
   const user = (req as any).authUser;
-  db.prepare(`DELETE FROM habits WHERE user_id = ? AND id = ?`).run(user.id, Number(req.params.id));
-  res.json({ ok: true });
+  const habitId = Number(req.params.id);
+
+  const existing = db.prepare(`SELECT * FROM habits WHERE user_id = ? AND id = ?`).get(user.id, habitId) as any;
+  if (!existing) return res.status(404).json({ error: 'Habit not found' });
+
+  const repeatGroup = String(existing.repeat_group || '');
+
+  if (existing.repeatable && repeatGroup) {
+    db.prepare(`DELETE FROM habit_entries WHERE habit_id IN (SELECT id FROM habits WHERE user_id = ? AND repeat_group = ?)`).run(user.id, repeatGroup);
+    db.prepare(`DELETE FROM habits WHERE user_id = ? AND repeat_group = ?`).run(user.id, repeatGroup);
+    return res.json({ ok: true, deletedRepeatGroup: true });
+  }
+
+  db.prepare(`DELETE FROM habit_entries WHERE habit_id = ?`).run(habitId);
+  db.prepare(`DELETE FROM habits WHERE user_id = ? AND id = ?`).run(user.id, habitId);
+
+  res.json({ ok: true, deletedRepeatGroup: false });
 });
 
 router.post('/:id/archive', (req, res) => {

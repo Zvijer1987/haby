@@ -168,3 +168,11 @@ Example for a local ./data folder:
 
 New installations using a normal user-owned bind mount should work without extra permission changes.
 
+
+## Hotfix notes - v1.1.1
+
+### Repeatable card delete fix
+
+This hotfix fixes deleting repeatable habits and goals.
+
+Deleting a repeatable card now deletes the whole repeat group, including older archived repeatable cards from the same group. This prevents archived repeatable cards from recreating the deleted card.

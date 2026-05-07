@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.1.1
+
+### Fixed
+
+- Fixed deleting repeatable habits and goals.
+- Deleting a repeatable card now deletes the whole repeat group.
+- Archived repeatable cards from the same group no longer recreate the deleted active card.
+
 ## v1.1.0
 
 ### Added
