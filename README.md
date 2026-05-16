@@ -35,17 +35,29 @@ You are prompted to change the password after the first login.
 
 Haby seeds a curated default dashboard for first-time use and for new users:
 
-### Habit cards
-- 1 habit with **column chart + mini calendar**
-- 1 habit with **line chart + mini calendar**
-- 1 habit with **mini calendar only**
-- 1 habit with **no mini calendar and no chart**
+Habit cards
 
-### Goal cards
-- 4 goal cards with a visual mix of line, column, pie, and calendar-first layouts
+- 5 active habit cards.
+- Mixed card layouts with mini calendars, compact cards, repeatable cards, and different visual styles.
+- Charts are widget-only, so habit cards stay focused on daily tracking.
 
-### Archive
-- 1 archived sample card so the archive section is visible immediately
+Goal cards
+
+- 4 active goal cards.
+- Goal examples include steps, distance, sleep, and reading progress.
+- Goal cards use progress bars, units, mini calendars, and compact layouts.
+
+Archive
+
+- 2 archived sample cards.
+- The archive section is visible immediately on first run.
+
+Widgets
+
+- Calendar
+- Today List
+- Overall History
+- Goal/card chart widget example
 
 ## Stack
 
@@ -126,23 +138,6 @@ Haby stores persistent runtime data in `/data` inside the container. The mounted
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for repository conventions and contribution notes.
 
 ## Update notes - v1.1.0
-
-### Repeatable habits and goals
-
-This release improves repeatable habits and goals.
-
-Repeatable cards now use period-based names:
-
-- Daily cards: Habit name (Day 1), Habit name (Day 2), ...
-- Weekly cards: Habit name (Week 1), Habit name (Week 2), ...
-- Monthly cards: Habit name (Month 1), Habit name (Month 2), ...
-
-When a new repeatable card is created for the next period, the previous card from the same repeat group is automatically archived. The dashboard keeps only the newest active repeatable card.
-
-### Icon picker
-
-The habit and goal icon picker now includes 5 rows of icons.
-
 ### Runtime user change
 
 The container now runs as the standard Node.js user:

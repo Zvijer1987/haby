@@ -28,6 +28,16 @@ type DragState = {
 
 const SECTION_GAP = 16;
 const SECTION_PADDING = 12;
+const DESKTOP_UI_SCALE = 0.8;
+
+function getUiScale() {
+  if (typeof window === 'undefined') return 1;
+  return window.innerWidth >= 901 ? DESKTOP_UI_SCALE : 1;
+}
+
+function toLayoutPx(value: number, scale = getUiScale()) {
+  return value / scale;
+}
 
 function normalizeNameKey(prefix: 'habit' | 'goal', id: number) {
   return `${prefix}-${id}`;
@@ -286,13 +296,14 @@ export default function App() {
       const rect = section.getBoundingClientRect();
       const offsetX = dragging.offsetX ?? 0;
       const offsetY = dragging.offsetY ?? 0;
-      const next = clampToSection(
-        event.clientX - rect.left - offsetX,
-        event.clientY - rect.top - offsetY,
-        section,
-        dragging.width,
-        dragging.height
-      );
+        const scale = getUiScale();
+        const next = clampToSection(
+          toLayoutPx(event.clientX - rect.left, scale) - offsetX,
+          toLayoutPx(event.clientY - rect.top, scale) - offsetY,
+          section,
+          dragging.width,
+          dragging.height
+        );
 
       if (dragFrameRef.current !== null) cancelAnimationFrame(dragFrameRef.current);
       dragFrameRef.current = requestAnimationFrame(() => {
@@ -390,34 +401,42 @@ export default function App() {
     const sectionEl = section === 'habit' ? habitSectionRef.current : goalSectionRef.current;
     const cardEl = event.currentTarget as HTMLElement;
     if (!sectionEl) return;
-    const sectionRect = sectionEl.getBoundingClientRect();
-    const cardRect = cardEl.getBoundingClientRect();
-    const next = clampToSection(cardRect.left - sectionRect.left, cardRect.top - sectionRect.top, sectionEl, cardRect.width, cardRect.height);
-    setDragging({
-      id: habit.id,
-      section,
-      key: normalizeNameKey(section, habit.id),
-      offsetX: event.clientX - cardRect.left,
-      offsetY: event.clientY - cardRect.top,
-      width: cardRect.width,
-      height: cardRect.height,
-      previewX: next.x,
-      previewY: next.y,
-    });
+      const sectionRect = sectionEl.getBoundingClientRect();
+      const cardRect = cardEl.getBoundingClientRect();
+      const scale = getUiScale();
+      const cardX = toLayoutPx(cardRect.left - sectionRect.left, scale);
+      const cardY = toLayoutPx(cardRect.top - sectionRect.top, scale);
+      const cardWidth = toLayoutPx(cardRect.width, scale);
+      const cardHeight = toLayoutPx(cardRect.height, scale);
+      const next = clampToSection(cardX, cardY, sectionEl, cardWidth, cardHeight);
+      setDragging({
+        id: habit.id,
+        section,
+        key: normalizeNameKey(section, habit.id),
+        offsetX: toLayoutPx(event.clientX - cardRect.left, scale),
+        offsetY: toLayoutPx(event.clientY - cardRect.top, scale),
+        width: cardWidth,
+        height: cardHeight,
+        previewX: next.x,
+        previewY: next.y,
+      });
     cardEl.setPointerCapture?.(event.pointerId);
     event.preventDefault();
   }
 
-  function getSectionMinHeight(layout: Record<string, LayoutItem>, section: 'habit' | 'goal', items: Habit[]) {
-    const bottoms = items.map((item) => {
-      const key = normalizeNameKey(section, item.id);
-      const pos = layout[key] || { x: 0, y: 0 };
-      const estimated = getEstimatedHeight(item);
-      const actual = cardHeights[key] || estimated;
-      return pos.y + actual;
-    });
-    return Math.max(480, ...bottoms) + 32;
-  }
+    function getSectionMinHeight(layout: Record<string, LayoutItem>, section: 'habit' | 'goal', items: Habit[]) {
+      const scale = getUiScale();
+      const bottoms = items.map((item) => {
+        const key = normalizeNameKey(section, item.id);
+        const pos = layout[key] || { x: 0, y: 0 };
+        const estimated = getEstimatedHeight(item);
+        const measured = cardHeights[key] || 0;
+        const normalizedMeasured = measured > 0 ? toLayoutPx(measured, scale) : 0;
+        const actual = Math.max(estimated, normalizedMeasured);
+        return pos.y + actual;
+      });
+      return Math.max(480, ...bottoms) + 64;
+    }
 
   if (store.bootstrapping || store.loading) return <div className="app-loading">Loading Haby...</div>;
   if (!store.authUser) return <LoginView onLogin={store.login} />;

@@ -349,7 +349,63 @@ export async function initDatabase() {
   ensureColumn('habits', 'repeat_anchor_date', "TEXT NOT NULL DEFAULT ''");
   await ensureDefaultUser();
   ensureSeedForAllUsers();
+  applyForcedV122VisualLayout();
 }
+
+
+
+function applyForcedV122VisualLayout() {
+  const users = db.prepare(`SELECT id FROM users ORDER BY id ASC`).all() as any[];
+
+  for (const user of users) {
+    const userId = Number(user.id);
+
+    const marker = db.prepare(`SELECT value FROM settings WHERE user_id = ? AND key = ?`)
+      .get(userId, 'forcedVisualLayoutV122Applied') as any;
+
+    const defaultSeedMarker = db.prepare(`SELECT value FROM settings WHERE user_id = ? AND key = ?`)
+      .get(userId, 'defaultSeedApplied') as any;
+
+    if (marker?.value === 'true') continue;
+
+    // Fresh default-seed users already have the intended v1.2.x card positions.
+    // Do not delete habitLayout / goalLayout for them.
+    if (defaultSeedMarker?.value === 'true') {
+      db.prepare(`INSERT OR REPLACE INTO settings (user_id, key, value) VALUES (?, ?, ?)`)
+        .run(userId, 'forcedVisualLayoutV122Applied', 'true');
+      continue;
+    }
+
+    const visualSettings = [
+      ['theme', 'light'],
+      ['uiStyle', 'modern'],
+      ['dashboardOpacity', '0.14'],
+      ['dashboardBackground', '/haby-dashboard-light-v5.png'],
+      ['dashboardBackgroundMode', 'center'],
+      ['dashboardBackgroundPositionX', '50'],
+      ['dashboardBackgroundPositionY', '50'],
+      ['dashboardBackgroundZoom', '100'],
+      ['dashboardHeroHeight', '298'],
+      ['dashboardTitle', 'Haby Dashboard'],
+      ['dashboardDescription', 'Track habits, goals, charts, widgets, categories, and progress in one place.'],
+      ['forcedVisualLayoutV122Applied', 'true'],
+    ];
+
+    for (const [key, value] of visualSettings) {
+      db.prepare(`INSERT OR REPLACE INTO settings (user_id, key, value) VALUES (?, ?, ?)`)
+        .run(userId, key, value);
+    }
+
+    // Clear only saved card positions so upgraded users get the new visual placement.
+    db.prepare(`DELETE FROM settings WHERE user_id = ? AND key IN (?, ?)`)
+      .run(userId, 'habitLayout', 'goalLayout');
+
+    // Charts are widget-only. This prevents old show_chart values from affecting card layout.
+    db.prepare(`UPDATE habits SET show_chart = 0, updated_at = ? WHERE user_id = ?`)
+      .run(nowIso(), userId);
+  }
+}
+
 
 function ensureColumn(table: string, column: string, definition: string) {
   const columns = db.prepare(`PRAGMA table_info(${table})`).all() as any[];

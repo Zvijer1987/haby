@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.2.1
+
+### Changed
+
+- Forced new layout.
 
 ## v1.2.0
 

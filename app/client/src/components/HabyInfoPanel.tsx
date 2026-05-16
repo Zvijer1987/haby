@@ -1,12 +1,24 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 
-const HABY_VERSION = '1.2.0';
+const HABY_VERSION = '1.2.1';
 
 const CHANGELOG_ITEMS = [
   {
-    version: 'v1.2.0',
+    version: 'v1.2.1',
     label: 'Current version',
+    sections: [
+      {
+        title: 'Changed',
+        items: [
+          'Forced new layout.',
+        ],
+      },
+    ],
+  },
+  {
+    version: 'v1.2.0',
+    label: 'Previous version',
     sections: [
       {
         title: 'Default first-run experience',
@@ -179,7 +191,7 @@ export default function HabyInfoPanel() {
           </button>
         </div>
 
-        <div className="haby-version-copy">Version 1.2.0</div>
+        <div className="haby-version-copy">Version 1.2.1</div>
       </div>
 
       {changesOpen

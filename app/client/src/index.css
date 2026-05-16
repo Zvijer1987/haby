@@ -5259,3 +5259,84 @@ body.theme-dark.ui-modern .dashboard-resize-handle::before {
     grid-template-columns: 1fr !important;
   }
 }
+
+
+/* =======================================================
+   HABY GLOBAL DESKTOP SCALE
+   ======================================================= */
+
+/*
+   Desktop baseline:
+   This intentionally makes Haby render like browser zoom 80%.
+   It preserves the existing v1.2.0 layout and scales the whole UI
+   instead of manually changing individual card, panel, button, and font sizes.
+*/
+
+@media (min-width: 901px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  .app-shell {
+    zoom: 0.8;
+    width: 125vw;
+    min-height: 125vh;
+  }
+
+  .modal-backdrop {
+    zoom: 0.8;
+    width: 125vw;
+    min-height: 125vh;
+  }
+}
+
+
+/* =======================================================
+   FINAL SYMMETRIC SIDE COLUMNS
+   Left panels = same width as right panels
+   ======================================================= */
+
+.layout-grid {
+  grid-template-columns: 320px minmax(0, 1fr) 320px !important;
+  column-gap: 24px !important;
+  align-items: start !important;
+}
+
+.left-column,
+.right-column {
+  width: 320px !important;
+  min-width: 320px !important;
+  max-width: 320px !important;
+}
+
+.center-column {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.main-sections {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.dashboard-hero,
+.active-section,
+.archived-section,
+.goals-section {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Optional: keep inner side panels full-width inside side columns */
+.left-column .panel,
+.right-column .panel,
+.left-column .sidebar-panel,
+.right-column .sidebar-panel,
+.left-column .right-ghost-panel,
+.right-column .right-ghost-panel {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
