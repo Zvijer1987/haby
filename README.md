@@ -171,9 +171,3 @@ Example for a local ./data folder:
     sudo docker start haby
 
 New installations using a normal user-owned bind mount should work without extra permission changes.
-
-## Update notes - v1.2.0
-
-Haby 1.2.0 includes the new full default first-run dashboard, Backup modal, widget-only charts, dashboard banner resizing, improved card layout behavior, updated modern README screenshots, and multiple UI polish fixes.
-
-New first-time installs now start with a complete Haby dashboard setup, including categories, habits, goals, widgets, dashboard layout, card positions, theme, banner size, and sample progress/history entries. Existing users are protected by a `defaultSeedApplied` marker so updates do not overwrite existing data.
