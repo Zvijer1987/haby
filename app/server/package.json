@@ -1,11 +1,11 @@
 {
   "name": "haby-server",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json && mkdir -p dist/db && cp src/db/default-seed.json dist/db/default-seed.json"
   },
   "dependencies": {
     "better-sqlite3": "^11.8.1",

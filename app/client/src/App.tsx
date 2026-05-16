@@ -5,6 +5,7 @@ import SidebarMenu from './components/SidebarMenu';
 import HabitCard from './components/HabitCard';
 import HabitModal from './components/HabitModal';
 import RightPanel from './components/RightPanel';
+import HabyInfoPanel from './components/HabyInfoPanel';
 import DashboardSettingsModal, { defaultDashboardBackground } from './components/DashboardSettingsModal';
 import { useStore, type Habit } from './store/useStore';
 
@@ -34,7 +35,7 @@ function normalizeNameKey(prefix: 'habit' | 'goal', id: number) {
 
 function getCardWidth(item: Habit) {
   const visualCount = Number(Boolean(item.showChart)) + Number(Boolean(item.showMiniCalendar));
-  if (visualCount === 0) return 300;
+  if (visualCount === 0) return 410;
   if (visualCount === 1) return 330;
   return item.habitType === 'goal' ? 365 : 390;
 }
@@ -47,11 +48,11 @@ function getEstimatedHeight(item: Habit) {
 }
 
 function normalizeDashboardBackground(value?: string, theme?: string) {
-  const fallback = theme === 'dark' ? '/default-dashboard-dark.svg' : defaultDashboardBackground;
+  const fallback = theme === 'dark' ? '/haby-dashboard-dark-v5.png' : defaultDashboardBackground;
   const next = (value || '').trim();
   if (!next) return fallback;
   if (next.startsWith('data:image/svg+xml')) return fallback;
-  if (next === defaultDashboardBackground || next === '/default-dashboard-dark.svg') return fallback;
+  if (next === defaultDashboardBackground || next === '/haby-dashboard-dark-v5.png') return fallback;
   return next;
 }
 
@@ -176,14 +177,7 @@ function mergeGroupHistory(items: Habit[], histories: Record<number, { date: str
 }
 
 function getCardChartConfig(item: Habit, groupedItems: Habit[], histories: Record<number, { date: string; value: number }[]>) {
-  if (item.period === 'daily' && !item.repeatable) return { showChart: false as const, range: 7 as const, history: histories[item.id] || [] };
-  if (item.period === 'daily' && item.repeatable) {
-    const history = mergeGroupHistory(groupedItems, histories);
-    const count = Math.max(1, groupedItems.length);
-    return { showChart: true as const, range: count <= 7 ? 7 as const : 30 as const, history };
-  }
-  const range = item.period === 'weekly' ? 14 as const : item.period === 'monthly' ? 30 as const : 7 as const;
-  return { showChart: Boolean(item.showChart), range, history: histories[item.id] || [] };
+  return { showChart: false as const, range: 7 as const, history: histories[item.id] || [] };
 }
 
 export default function App() {
@@ -191,6 +185,7 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [modal, setModal] = useState<{ mode: 'create' | 'edit'; entityType: 'standard' | 'goal'; habit?: Habit | null } | null>(null);
   const [dashboardOpen, setDashboardOpen] = useState(false);
+  const [dashboardResizeHeight, setDashboardResizeHeight] = useState<number | null>(null);
   const [sectionOpen, setSectionOpen] = useState({ habits: true, goals: true, archived: false });
   const [habitLayout, setHabitLayout] = useState<Record<string, LayoutItem>>({});
   const [goalLayout, setGoalLayout] = useState<Record<string, LayoutItem>>({});
@@ -199,10 +194,18 @@ export default function App() {
   const [cardHeights, setCardHeights] = useState<Record<string, number>>({});
   const habitSectionRef = useRef<HTMLDivElement | null>(null);
   const goalSectionRef = useRef<HTMLDivElement | null>(null);
+  const dashboardHeroRef = useRef<HTMLDivElement | null>(null);
   const dragFrameRef = useRef<number | null>(null);
   const theme = store.settings.theme || 'light';
+  const uiStyle = store.settings.uiStyle || 'classic';
   const dashboardOpacity = Number(store.settings.dashboardOpacity || '0.14');
+  const savedDashboardHeroHeight = Math.min(360, Math.max(96, Number(store.settings.dashboardHeroHeight || '132')));
+  const dashboardHeroHeight = dashboardResizeHeight ?? savedDashboardHeroHeight;
   const background = normalizeDashboardBackground(store.settings.dashboardBackground, theme);
+  const dashboardBackgroundMode = store.settings.dashboardBackgroundMode || 'center';
+  const dashboardBackgroundPositionX = store.settings.dashboardBackgroundPositionX || '50';
+  const dashboardBackgroundPositionY = store.settings.dashboardBackgroundPositionY || '50';
+  const dashboardBackgroundZoom = store.settings.dashboardBackgroundZoom || '100';
   const overlayAlpha = theme === 'dark'
     ? Math.min(0.68, 0.28 + (1 - dashboardOpacity) * 0.36)
     : Math.min(0.82, 0.14 + (1 - dashboardOpacity) * 0.42);
@@ -210,8 +213,33 @@ export default function App() {
   const dashboardStyle = {
     backgroundImage: theme === 'dark'
       ? `linear-gradient(rgba(5,11,23,${overlayAlpha}), rgba(5,11,23,${overlayAlpha})), url(${background})`
-      : `linear-gradient(rgba(255,255,255,${overlayAlpha}), rgba(255,255,255,${overlayAlpha})), url(${background})`
-  };
+      : `linear-gradient(rgba(255,255,255,${overlayAlpha}), rgba(255,255,255,${overlayAlpha})), url(${background})`,
+    backgroundSize: dashboardBackgroundMode === 'stretch'
+      ? '100% 100%'
+      : dashboardBackgroundMode === 'align'
+        ? `${Math.min(200, Math.max(50, Number(dashboardBackgroundZoom || '100')))}% auto`
+        : 'cover',
+    backgroundPosition: dashboardBackgroundMode === 'align'
+      ? `${Number(dashboardBackgroundPositionX || '50')}% ${Number(dashboardBackgroundPositionY || '50')}%`
+      : 'center center',
+    backgroundRepeat: 'no-repeat',
+    height: `${dashboardHeroHeight}px`,
+    minHeight: `${dashboardHeroHeight}px`,
+    '--dashboard-hero-height': `${dashboardHeroHeight}px`,
+  } as CSSProperties;
+
+  useEffect(() => {
+    document.body.classList.remove('theme-light', 'theme-dark', 'ui-classic', 'ui-modern');
+    document.body.classList.add(
+      theme === 'dark' ? 'theme-dark' : 'theme-light',
+      uiStyle === 'modern' ? 'ui-modern' : 'ui-classic',
+    );
+
+    return () => {
+      document.body.classList.remove('theme-light', 'theme-dark', 'ui-classic', 'ui-modern');
+    };
+  }, [theme, uiStyle]);
+
 
   const filteredItems = useMemo(() => store.habits.filter((habit) => selectedCategory === 'all' || String(habit.categoryId) === selectedCategory), [store.habits, selectedCategory]);
   const archivedItems = useMemo(() => filteredItems.filter((item) => item.isArchived || isExpiredRepeatableItem(item)), [filteredItems]);
@@ -301,6 +329,58 @@ export default function App() {
     };
   }, [dragging, normalizedHabitLayout, normalizedGoalLayout, store]);
 
+  function beginDashboardResize(event: any) {
+    const hero = dashboardHeroRef.current;
+    if (!hero) return;
+
+    const heroElement = hero;
+    const startY = Number(event.clientY || 0);
+    const startHeight = heroElement.getBoundingClientRect().height || dashboardHeroHeight;
+    let latestHeight = Math.round(startHeight);
+
+    document.body.classList.add('dashboard-resizing');
+
+    function applyHeight(clientY: number) {
+      const delta = clientY - startY;
+      latestHeight = Math.round(Math.min(360, Math.max(96, startHeight + delta)));
+
+      heroElement.style.setProperty('--dashboard-hero-height', `${latestHeight}px`);
+      heroElement.style.height = `${latestHeight}px`;
+      heroElement.style.minHeight = `${latestHeight}px`;
+
+      setDashboardResizeHeight(latestHeight);
+    }
+
+    function onMouseMove(mouseEvent: MouseEvent) {
+      mouseEvent.preventDefault();
+      mouseEvent.stopPropagation();
+      applyHeight(mouseEvent.clientY);
+    }
+
+    function onMouseUp(mouseEvent: MouseEvent) {
+      mouseEvent.preventDefault();
+      mouseEvent.stopPropagation();
+
+      document.removeEventListener('mousemove', onMouseMove, true);
+      document.removeEventListener('mouseup', onMouseUp, true);
+      document.body.classList.remove('dashboard-resizing');
+
+      heroElement.style.setProperty('--dashboard-hero-height', `${latestHeight}px`);
+      heroElement.style.height = `${latestHeight}px`;
+      heroElement.style.minHeight = `${latestHeight}px`;
+
+      void store.saveSetting('dashboardHeroHeight', String(latestHeight)).finally(() => {
+        setDashboardResizeHeight(null);
+      });
+    }
+
+    document.addEventListener('mousemove', onMouseMove, true);
+    document.addEventListener('mouseup', onMouseUp, true);
+
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
   function updateCardHeight(key: string, height: number) {
     setCardHeights((prev) => (prev[key] === height ? prev : { ...prev, [key]: height }));
   }
@@ -343,20 +423,16 @@ export default function App() {
   if (!store.authUser) return <LoginView onLogin={store.login} />;
 
   return (
-    <div className={`app-shell ${theme === 'dark' ? 'theme-dark' : 'theme-light'}`}>
-      <div className="dashboard-hero dashboard-hero-has-image dashboard-hero-fresh" style={dashboardStyle}>
-        <div>
-          <h1>{store.settings.dashboardTitle || 'Haby Dashboard'}</h1>
-          <p>{store.settings.dashboardDescription || 'Track habits, goals, charts, widgets, categories, and progress in one place.'}</p>
-        </div>
-        <button type="button" className="soft-btn small-btn" onClick={() => setDashboardOpen(true)}>Customize</button>
-      </div>
-
+    <div className={`app-shell ${theme === 'dark' ? 'theme-dark' : 'theme-light'} ${uiStyle === 'modern' ? 'ui-modern' : 'ui-classic'}`}>
       <div className="layout-grid">
         <div className="left-column stack-gap">
           <AccountPanel
+            theme={theme}
+            setTheme={(next) => { void store.saveSetting('theme', next); }}
+            uiStyle={uiStyle}
+            setUiStyle={(next) => { void store.saveSetting('uiStyle', next); }}
             user={store.authUser}
-            profilePicture={store.settings.profilePicture || ''}
+            profilePicture={store.settings.profilePicture || '/Haby_profile.png'}
             onSaveProfilePicture={(value) => store.saveSetting('profilePicture', value)}
             onLogout={store.logout}
             onChangeUsername={store.changeUsername}
@@ -366,10 +442,11 @@ export default function App() {
             onDisableUser={store.disableUserAccount}
             onEnableUser={store.enableUserAccount}
             onDeleteUser={store.deleteUserAccount}
+            onBackupExport={store.exportData}
+            onBackupImportPreview={store.previewImportData}
+            onBackupImportConfirm={store.importData}
           />
           <SidebarMenu
-            theme={theme}
-            setTheme={(next) => { void store.saveSetting('theme', next); }}
             categories={store.categories}
             habits={activeHabitsBase}
             goals={activeGoalsBase}
@@ -388,6 +465,23 @@ export default function App() {
         </div>
 
         <main className="center-column stack-gap main-sections">
+
+          <div ref={dashboardHeroRef} className="dashboard-hero dashboard-hero-has-image dashboard-hero-fresh" style={dashboardStyle}>
+                  <div>
+                    <h1>{store.settings.dashboardTitle || 'Haby Dashboard'}</h1>
+                    <p>{store.settings.dashboardDescription || 'Track habits, goals, charts, widgets, categories, and progress in one place.'}</p>
+                  </div>
+                  <button type="button" className="soft-btn small-btn" onClick={() => setDashboardOpen(true)}>Customize</button>
+                  <div
+                    className="dashboard-resize-handle"
+                    role="separator"
+                    aria-orientation="horizontal"
+                    aria-label="Resize dashboard banner"
+                    onMouseDown={beginDashboardResize}
+                  />
+                </div>
+          
+          
           <section className="section-block section-collapsible">
             <div className="section-head section-head-row">
               <button type="button" className="section-toggle" onClick={() => setSectionOpen((prev) => ({ ...prev, habits: !prev.habits }))}>
@@ -532,17 +626,32 @@ export default function App() {
             ) : null}
           </section>
         </main>
+        <div className="haby-right-stack">
 
-        <RightPanel
-          widgets={store.widgets}
-          habits={store.habits}
-          histories={store.histories}
-          selectedCategory={selectedCategory}
-          onAddWidget={store.addWidget}
-          onDeleteWidget={store.deleteWidget}
-          onReorderWidgets={store.reorderWidgets}
-          onUpdateWidget={store.updateWidget}
-        />
+          <HabyInfoPanel />
+
+
+          <RightPanel
+
+            widgets={store.widgets}
+
+            habits={store.habits}
+
+            histories={store.histories}
+
+            selectedCategory={selectedCategory}
+
+            onAddWidget={store.addWidget}
+
+            onDeleteWidget={store.deleteWidget}
+
+            onReorderWidgets={store.reorderWidgets}
+
+            onUpdateWidget={store.updateWidget}
+
+          />
+
+        </div>
       </div>
 
       {modal ? (
@@ -570,13 +679,22 @@ export default function App() {
           description={store.settings.dashboardDescription || 'Track habits, goals, charts, widgets, categories, and progress in one place.'}
           background={normalizeDashboardBackground(store.settings.dashboardBackground, theme)}
           opacity={String(store.settings.dashboardOpacity || '0.14')}
+          mode={store.settings.dashboardBackgroundMode || 'center'}
+          positionX={store.settings.dashboardBackgroundPositionX || '50'}
+          positionY={store.settings.dashboardBackgroundPositionY || '50'}
+          zoom={store.settings.dashboardBackgroundZoom || '100'}
+          theme={theme}
           onClose={() => setDashboardOpen(false)}
-          onSave={async ({ title, description, background: nextBackground, opacity }) => {
+          onSave={async ({ title, description, background: nextBackground, opacity, mode, positionX, positionY, zoom }) => {
             await Promise.all([
               store.saveSetting('dashboardTitle', title),
               store.saveSetting('dashboardDescription', description),
               store.saveSetting('dashboardBackground', normalizeDashboardBackground(nextBackground, theme)),
               store.saveSetting('dashboardOpacity', opacity),
+              store.saveSetting('dashboardBackgroundMode', mode),
+              store.saveSetting('dashboardBackgroundPositionX', positionX),
+              store.saveSetting('dashboardBackgroundPositionY', positionY),
+              store.saveSetting('dashboardBackgroundZoom', zoom),
             ]);
             setDashboardOpen(false);
           }}

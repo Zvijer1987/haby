@@ -2,8 +2,193 @@ import { db } from './database.js';
 import { schemaSql } from './schema.js';
 import { hashPassword } from '../lib/password.js';
 import { nowIso, todayIso } from '../lib/time.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const defaultBackground = '/default-dashboard.svg';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const defaultSeedPath = path.join(__dirname, 'default-seed.json');
+
+function readDefaultSeed() {
+  if (!fs.existsSync(defaultSeedPath)) return null;
+
+  try {
+    return JSON.parse(fs.readFileSync(defaultSeedPath, 'utf8'));
+  } catch (error) {
+    console.error('Failed to read default-seed.json:', error);
+    return null;
+  }
+}
+
+function remapLayoutSettingValue(value: any, habitMap: Map<number, number>) {
+  try {
+    const parsed = typeof value === 'string' ? JSON.parse(value || '{}') : value;
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return String(value ?? '{}');
+    }
+
+    const next: Record<string, any> = {};
+
+    for (const [key, position] of Object.entries(parsed)) {
+      const cleanKey = String(key);
+      const match = cleanKey.match(/^(.*?)(\d+)$/);
+
+      if (!match) {
+        next[cleanKey] = position;
+        continue;
+      }
+
+      const prefix = match[1];
+      const oldId = Number(match[2]);
+      const newId = habitMap.get(oldId);
+
+      if (!newId) {
+        next[cleanKey] = position;
+        continue;
+      }
+
+      next[`${prefix}${newId}`] = position;
+    }
+
+    return JSON.stringify(next);
+  } catch {
+    return String(value ?? '{}');
+  }
+}
+
+function seedFromDefaultBackup(userId: number) {
+  const payload = readDefaultSeed();
+  if (!payload) return false;
+
+  const now = nowIso();
+
+  const seedTransaction = db.transaction((targetUserId: number, backupPayload: any) => {
+    const categoryMap = new Map<string, number>();
+
+    for (const category of (backupPayload.categories || [])) {
+      const categoryName = String(category?.name || '').trim();
+      if (!categoryName) continue;
+
+      const existing = db.prepare(`SELECT id FROM categories WHERE user_id = ? AND name = ?`).get(targetUserId, categoryName) as any;
+
+      if (existing?.id) {
+        categoryMap.set(categoryName, Number(existing.id));
+        continue;
+      }
+
+      const result = db.prepare(
+        `INSERT INTO categories (user_id, name, is_builtin, created_at) VALUES (?, ?, 1, ?)`
+      ).run(targetUserId, categoryName, category?.created_at || category?.createdAt || now);
+
+      categoryMap.set(categoryName, Number(result.lastInsertRowid));
+    }
+
+    const habitMap = new Map<number, number>();
+
+    for (const habit of (backupPayload.habits || [])) {
+      const categoryName = String(habit?.categoryName || habit?.category_name || '').trim();
+
+      const result = db.prepare(
+        `INSERT INTO habits (
+          user_id, name, description, category_id, period, target_count, expected_per_day, icon, color, visualization,
+          allow_overcomplete, is_archived, created_at, updated_at, card_background_type,
+          card_background_value, card_overlay_opacity, show_mini_calendar, show_chart,
+          chart_type, habit_type, unit_label, sort_order, repeatable, repeat_group, repeat_index, repeat_base_name, repeat_anchor_date
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).run(
+        targetUserId,
+        habit?.name || 'Habit',
+        habit?.description || '',
+        categoryName ? categoryMap.get(categoryName) ?? null : null,
+        habit?.period || 'daily',
+        Number(habit?.target_count ?? habit?.targetCount ?? 1),
+        Number(habit?.expected_per_day ?? habit?.expectedPerDay ?? 1),
+        habit?.icon || '⭐',
+        habit?.color || '#93c5fd',
+        habit?.visualization || 'bar',
+        Number(habit?.allow_overcomplete ?? habit?.allowOvercomplete ?? 1),
+        Number(habit?.is_archived ?? habit?.isArchived ?? 0),
+        habit?.created_at || habit?.createdAt || now,
+        habit?.updated_at || habit?.updatedAt || now,
+        habit?.card_background_type || habit?.cardBackgroundType || 'color',
+        habit?.card_background_value || habit?.cardBackgroundValue || '#ffffff',
+        Number(habit?.card_overlay_opacity ?? habit?.cardOverlayOpacity ?? 0.14),
+        Number(habit?.show_mini_calendar ?? habit?.showMiniCalendar ?? 1),
+        Number(habit?.show_chart ?? habit?.showChart ?? 1),
+        habit?.chart_type || habit?.chartType || 'line',
+        habit?.habit_type || habit?.habitType || 'standard',
+        habit?.unit_label || habit?.unitLabel || '',
+        Number(habit?.sort_order ?? habit?.sortOrder ?? 0),
+        Number(habit?.repeatable ?? 0),
+        habit?.repeat_group || habit?.repeatGroup || '',
+        Number(habit?.repeat_index ?? habit?.repeatIndex ?? 1),
+        habit?.repeat_base_name || habit?.repeatBaseName || habit?.name || '',
+        habit?.repeat_anchor_date || habit?.repeatAnchorDate || todayIso()
+      );
+
+      if (habit?.id !== undefined && habit?.id !== null) {
+        habitMap.set(Number(habit.id), Number(result.lastInsertRowid));
+      }
+    }
+
+    for (const entry of (backupPayload.entries || [])) {
+      const oldHabitId = Number(entry?.habit_id || entry?.habitId);
+      const nextHabitId = habitMap.get(oldHabitId);
+
+      if (!nextHabitId) continue;
+
+      db.prepare(`INSERT INTO habit_entries (habit_id, entry_date, amount, created_at) VALUES (?, ?, ?, ?)`)
+        .run(
+          nextHabitId,
+          entry?.entry_date || entry?.entryDate || todayIso(),
+          Number(entry?.amount || 0),
+          entry?.created_at || entry?.createdAt || now
+        );
+    }
+
+    for (const setting of (backupPayload.settings || [])) {
+      const key = String(setting?.key || '').trim();
+      if (!key) continue;
+
+      let value = String(setting?.value ?? '');
+
+      if (key === 'habitLayout' || key === 'goalLayout') {
+        value = remapLayoutSettingValue(value, habitMap);
+      }
+
+      db.prepare(`INSERT OR REPLACE INTO settings (user_id, key, value) VALUES (?, ?, ?)`)
+        .run(targetUserId, key, value);
+    }
+
+    for (const widget of (backupPayload.widgets || [])) {
+      const type = String(widget?.type || 'current');
+      const label = String(widget?.label || 'Widget');
+      const configJson = typeof widget?.config_json === 'string'
+        ? widget.config_json
+        : typeof widget?.configJson === 'string'
+          ? widget.configJson
+          : JSON.stringify(widget?.config || {});
+
+      db.prepare(`INSERT INTO widgets (user_id, type, label, config_json, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?)`)
+        .run(
+          targetUserId,
+          type,
+          label,
+          configJson,
+          Number(widget?.sort_order ?? widget?.sortOrder ?? 0),
+          widget?.created_at || widget?.createdAt || now
+        );
+    }
+  });
+
+  seedTransaction(userId, payload);
+  return true;
+}
+
+const defaultBackground = '/haby-dashboard-light-v5.png';
 
 const demoCategories = ['Health', 'Movement', 'Focus', 'Recovery'];
 
@@ -193,6 +378,16 @@ async function ensureDefaultUser() {
 }
 
 export function seedDefaultsForUser(userId: number) {
+  const habitCount = db.prepare(`SELECT COUNT(*) AS count FROM habits WHERE user_id = ?`).get(userId) as any;
+  const seedMarker = db.prepare(`SELECT value FROM settings WHERE user_id = ? AND key = ?`).get(userId, 'defaultSeedApplied') as any;
+
+  if (!habitCount.count && seedMarker?.value !== 'true' && seedFromDefaultBackup(userId)) {
+    db.prepare(`INSERT OR REPLACE INTO settings (user_id, key, value) VALUES (?, ?, ?)`)
+      .run(userId, 'defaultSeedApplied', 'true');
+
+    return;
+  }
+
   const now = nowIso();
 
   for (const categoryName of demoCategories) {
@@ -204,7 +399,6 @@ export function seedDefaultsForUser(userId: number) {
   const categoryRows = db.prepare(`SELECT id, name FROM categories WHERE user_id = ?`).all(userId) as any[];
   const categoryMap = new Map(categoryRows.map((row) => [row.name, row.id]));
 
-  const habitCount = db.prepare(`SELECT COUNT(*) AS count FROM habits WHERE user_id = ?`).get(userId) as any;
   if (!habitCount.count) {
     demoHabits.forEach((habit, index) => {
       const result = db.prepare(
@@ -253,7 +447,12 @@ export function seedDefaultsForUser(userId: number) {
 
   const defaults = [
     ['theme', 'light'],
+    ['uiStyle', 'classic'],
     ['dashboardOpacity', '0.14'],
+    ['dashboardBackgroundMode', 'center'],
+    ['dashboardBackgroundPositionX', '50'],
+    ['dashboardBackgroundPositionY', '50'],
+    ['dashboardBackgroundZoom', '100'],
     ['dashboardDescription', 'Track habits, goals, charts, widgets, categories, and progress in one place.'],
     ['dashboardBackground', defaultBackground]
   ];

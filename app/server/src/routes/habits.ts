@@ -4,6 +4,44 @@ import { requireAuth } from '../lib/auth.js';
 import { addDaysLocalIso, localDate, nowIso, parseLocalDate, startOfMonthIso, startOfWeekIso, todayIso } from '../lib/time.js';
 
 const router = Router();
+
+function remapLayoutSettingValue(value: any, habitMap: Map<number, number>) {
+  try {
+    const parsed = typeof value === 'string' ? JSON.parse(value || '{}') : value;
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return String(value ?? '{}');
+    }
+
+    const next: Record<string, any> = {};
+
+    for (const [key, position] of Object.entries(parsed)) {
+      const cleanKey = String(key);
+      const match = cleanKey.match(/^(.*?)(\d+)$/);
+
+      if (!match) {
+        next[cleanKey] = position;
+        continue;
+      }
+
+      const prefix = match[1];
+      const oldId = Number(match[2]);
+      const newId = habitMap.get(oldId);
+
+      if (!newId) {
+        next[cleanKey] = position;
+        continue;
+      }
+
+      next[`${prefix}${newId}`] = position;
+    }
+
+    return JSON.stringify(next);
+  } catch {
+    return String(value ?? '{}');
+  }
+}
+
 router.use(requireAuth);
 
 function periodStartIso(period: 'daily' | 'weekly' | 'monthly', dateIso = todayIso()) {
@@ -373,23 +411,49 @@ router.post('/reorder', (req, res) => {
 
 router.get('/export/all', (req, res) => {
   const user = (req as any).authUser;
+
   const categories = db.prepare(`SELECT name FROM categories WHERE user_id = ? ORDER BY name ASC`).all(user.id);
-  const habits = db.prepare(`SELECT * FROM habits WHERE user_id = ? ORDER BY sort_order ASC`).all(user.id);
-  const entries = db.prepare(
-    `SELECT e.* FROM habit_entries e JOIN habits h ON h.id = e.habit_id WHERE h.user_id = ? ORDER BY e.entry_date ASC`
+
+  const habits = db.prepare(
+    `SELECT h.*, c.name AS categoryName
+     FROM habits h
+     LEFT JOIN categories c ON c.id = h.category_id
+     WHERE h.user_id = ?
+     ORDER BY h.sort_order ASC`
   ).all(user.id);
+
+  const entries = db.prepare(
+    `SELECT e.*
+     FROM habit_entries e
+     JOIN habits h ON h.id = e.habit_id
+     WHERE h.user_id = ?
+     ORDER BY e.entry_date ASC`
+  ).all(user.id);
+
   const settings = db.prepare(`SELECT key, value FROM settings WHERE user_id = ?`).all(user.id);
-  res.json({ categories, habits, entries, settings });
+
+  const widgets = db.prepare(
+    `SELECT id, type, label, config_json, sort_order, created_at
+     FROM widgets
+     WHERE user_id = ?
+     ORDER BY sort_order ASC, id ASC`
+  ).all(user.id);
+
+  res.json({ categories, habits, entries, settings, widgets });
 });
 
 router.post('/import/preview', (req, res) => {
   const payload = req.body || {};
   const habits = Array.isArray(payload.habits) ? payload.habits : [];
+  const widgets = Array.isArray(payload.widgets) ? payload.widgets : [];
+  const settings = Array.isArray(payload.settings) ? payload.settings : [];
+
   res.json({
     preview: {
       habits: habits.filter((h: any) => Number(h.is_archived ?? h.isArchived ?? 0) !== 1 && String(h.habit_type || h.habitType || 'standard') !== 'goal').length,
       goals: habits.filter((h: any) => Number(h.is_archived ?? h.isArchived ?? 0) !== 1 && String(h.habit_type || h.habitType || 'standard') === 'goal').length,
-      archived: habits.filter((h: any) => Number(h.is_archived ?? h.isArchived ?? 0) === 1).length
+      archived: habits.filter((h: any) => Number(h.is_archived ?? h.isArchived ?? 0) === 1).length,
+      widgets: widgets.length
     }
   });
 });
@@ -397,59 +461,121 @@ router.post('/import/preview', (req, res) => {
 router.post('/import/all', (req, res) => {
   const user = (req as any).authUser;
   const payload = req.body || {};
-  db.prepare(`DELETE FROM habit_entries WHERE habit_id IN (SELECT id FROM habits WHERE user_id = ? )`).run(user.id);
-  db.prepare(`DELETE FROM habits WHERE user_id = ?`).run(user.id);
-  db.prepare(`DELETE FROM categories WHERE user_id = ? AND is_builtin = 0`).run(user.id);
-  db.prepare(`DELETE FROM settings WHERE user_id = ?`).run(user.id);
 
-  const categoryMap = new Map<string, number>();
-  for (const category of (payload.categories || [])) {
-    const categoryName = String(category?.name || '').trim();
-    if (!categoryName) continue;
-    const existing = db.prepare(`SELECT id FROM categories WHERE user_id = ? AND name = ?`).get(user.id, categoryName) as any;
-    if (existing?.id) {
-      categoryMap.set(categoryName, Number(existing.id));
-      continue;
+  const importAll = db.transaction((userId: number, backupPayload: any) => {
+    db.prepare(`DELETE FROM habit_entries WHERE habit_id IN (SELECT id FROM habits WHERE user_id = ? )`).run(userId);
+    db.prepare(`DELETE FROM habits WHERE user_id = ?`).run(userId);
+    db.prepare(`DELETE FROM categories WHERE user_id = ? AND is_builtin = 0`).run(userId);
+    db.prepare(`DELETE FROM settings WHERE user_id = ?`).run(userId);
+    db.prepare(`DELETE FROM widgets WHERE user_id = ?`).run(userId);
+
+    const categoryMap = new Map<string, number>();
+
+    for (const category of (backupPayload.categories || [])) {
+      const categoryName = String(category?.name || '').trim();
+      if (!categoryName) continue;
+
+      const existing = db.prepare(`SELECT id FROM categories WHERE user_id = ? AND name = ?`).get(userId, categoryName) as any;
+
+      if (existing?.id) {
+        categoryMap.set(categoryName, Number(existing.id));
+        continue;
+      }
+
+      const result = db.prepare(`INSERT INTO categories (user_id, name, is_builtin, created_at) VALUES (?, ?, 0, ?)`)
+        .run(userId, categoryName, nowIso());
+
+      categoryMap.set(categoryName, Number(result.lastInsertRowid));
     }
-    const result = db.prepare(`INSERT INTO categories (user_id, name, is_builtin, created_at) VALUES (?, ?, 0, ?)`)
-      .run(user.id, categoryName, nowIso());
-    categoryMap.set(categoryName, Number(result.lastInsertRowid));
-  }
 
+    const habitMap = new Map<number, number>();
 
-  const habitMap = new Map<number, number>();
-  for (const habit of (payload.habits || [])) {
-    const result = db.prepare(
-      `INSERT INTO habits (user_id, name, description, category_id, period, target_count, expected_per_day, icon, color, visualization,
-        allow_overcomplete, is_archived, created_at, updated_at, card_background_type, card_background_value,
-        card_overlay_opacity, show_mini_calendar, show_chart, chart_type, habit_type, unit_label, sort_order,
-        repeatable, repeat_group, repeat_index, repeat_base_name, repeat_anchor_date)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(
-      user.id, habit.name, habit.description || '', habit.categoryName ? categoryMap.get(habit.categoryName) ?? null : null,
-      habit.period || 'daily', Number(habit.target_count || habit.targetCount || 1), Number(habit.expected_per_day || habit.expectedPerDay || 1), habit.icon || '⭐', habit.color || '#93c5fd',
-      habit.visualization || 'bar', Number(habit.allow_overcomplete ?? 1), Number(habit.is_archived ?? 0), habit.created_at || nowIso(), habit.updated_at || nowIso(),
-      habit.card_background_type || habit.cardBackgroundType || 'color', habit.card_background_value || habit.cardBackgroundValue || '#ffffff',
-      Number(habit.card_overlay_opacity ?? habit.cardOverlayOpacity ?? 0.14), Number(habit.show_mini_calendar ?? habit.showMiniCalendar ?? 1),
-      Number(habit.show_chart ?? habit.showChart ?? 1), habit.chart_type || habit.chartType || 'line', habit.habit_type || habit.habitType || 'standard',
-      habit.unit_label || habit.unitLabel || '', Number(habit.sort_order ?? habit.sortOrder ?? 0), Number(habit.repeatable ?? 0), habit.repeat_group || '', Number(habit.repeat_index ?? habit.repeatIndex ?? 1), habit.repeat_base_name || habit.name || '', habit.repeat_anchor_date || todayIso()
-    );
-    habitMap.set(habit.id, Number(result.lastInsertRowid));
-  }
+    for (const habit of (backupPayload.habits || [])) {
+      const result = db.prepare(
+        `INSERT INTO habits (user_id, name, description, category_id, period, target_count, expected_per_day, icon, color, visualization,
+          allow_overcomplete, is_archived, created_at, updated_at, card_background_type, card_background_value,
+          card_overlay_opacity, show_mini_calendar, show_chart, chart_type, habit_type, unit_label, sort_order,
+          repeatable, repeat_group, repeat_index, repeat_base_name, repeat_anchor_date)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).run(
+        userId,
+        habit.name,
+        habit.description || '',
+        habit.categoryName ? categoryMap.get(habit.categoryName) ?? null : null,
+        habit.period || 'daily',
+        Number(habit.target_count || habit.targetCount || 1),
+        Number(habit.expected_per_day || habit.expectedPerDay || 1),
+        habit.icon || '⭐',
+        habit.color || '#93c5fd',
+        habit.visualization || 'bar',
+        Number(habit.allow_overcomplete ?? 1),
+        Number(habit.is_archived ?? 0),
+        habit.created_at || nowIso(),
+        habit.updated_at || nowIso(),
+        habit.card_background_type || habit.cardBackgroundType || 'color',
+        habit.card_background_value || habit.cardBackgroundValue || '#ffffff',
+        Number(habit.card_overlay_opacity ?? habit.cardOverlayOpacity ?? 0.14),
+        Number(habit.show_mini_calendar ?? habit.showMiniCalendar ?? 1),
+        Number(habit.show_chart ?? habit.showChart ?? 1),
+        habit.chart_type || habit.chartType || 'line',
+        habit.habit_type || habit.habitType || 'standard',
+        habit.unit_label || habit.unitLabel || '',
+        Number(habit.sort_order ?? habit.sortOrder ?? 0),
+        Number(habit.repeatable ?? 0),
+        habit.repeat_group || '',
+        Number(habit.repeat_index ?? habit.repeatIndex ?? 1),
+        habit.repeat_base_name || habit.name || '',
+        habit.repeat_anchor_date || todayIso()
+      );
 
-  for (const entry of (payload.entries || [])) {
-    const nextHabitId = habitMap.get(entry.habit_id || entry.habitId);
-    if (!nextHabitId) continue;
-    db.prepare(`INSERT INTO habit_entries (habit_id, entry_date, amount, created_at) VALUES (?, ?, ?, ?)`)
-      .run(nextHabitId, entry.entry_date || entry.entryDate, Number(entry.amount || 0), entry.created_at || nowIso());
-  }
+      if (habit.id !== undefined && habit.id !== null) {
+        habitMap.set(Number(habit.id), Number(result.lastInsertRowid));
+      }
+    }
 
-  for (const setting of (payload.settings || [])) {
-    db.prepare(`INSERT INTO settings (user_id, key, value) VALUES (?, ?, ?)`)
-      .run(user.id, setting.key, String(setting.value ?? ''));
-  }
+    for (const entry of (backupPayload.entries || [])) {
+      const oldHabitId = Number(entry.habit_id || entry.habitId);
+      const nextHabitId = habitMap.get(oldHabitId);
 
-  ensureRepeatableHabitsForUser(user.id);
+      if (!nextHabitId) continue;
+
+      db.prepare(`INSERT INTO habit_entries (habit_id, entry_date, amount, created_at) VALUES (?, ?, ?, ?)`)
+        .run(nextHabitId, entry.entry_date || entry.entryDate, Number(entry.amount || 0), entry.created_at || nowIso());
+    }
+      for (const setting of (backupPayload.settings || [])) {
+        const key = String(setting?.key || '').trim();
+        if (!key) continue;
+
+        let value = String(setting?.value ?? '');
+
+        if (key === 'habitLayout' || key === 'goalLayout') {
+          value = remapLayoutSettingValue(value, habitMap);
+        }
+
+        db.prepare(`INSERT INTO settings (user_id, key, value) VALUES (?, ?, ?)`)
+          .run(userId, key, value);
+      }
+
+    for (const widget of (backupPayload.widgets || [])) {
+      const type = String(widget?.type || 'current');
+      const label = String(widget?.label || 'Widget');
+      const configJson = typeof widget?.config_json === 'string'
+        ? widget.config_json
+        : typeof widget?.configJson === 'string'
+          ? widget.configJson
+          : JSON.stringify(widget?.config || {});
+      const sortOrder = Number(widget?.sort_order ?? widget?.sortOrder ?? 0);
+      const createdAt = widget?.created_at || widget?.createdAt || nowIso();
+
+      db.prepare(`INSERT INTO widgets (user_id, type, label, config_json, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?)`)
+        .run(userId, type, label, configJson, sortOrder, createdAt);
+    }
+
+    ensureRepeatableHabitsForUser(userId);
+  });
+
+  importAll(user.id, payload);
+
   res.json({ ok: true });
 });
 

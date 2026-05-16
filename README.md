@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/screenshots/haby-icon-48.png" width="48" height="48" alt="Haby icon" />
+</p>
+
 # Haby
 
 Haby is a self-hosted habit and goal tracker built for private, homelab-friendly deployments. It combines daily habits, progress goals, lightweight widgets, and a clean dashboard into a single containerized app.
@@ -168,11 +172,8 @@ Example for a local ./data folder:
 
 New installations using a normal user-owned bind mount should work without extra permission changes.
 
+## Update notes - v1.2.0
 
-## Hotfix notes - v1.1.1
+Haby 1.2.0 includes the new full default first-run dashboard, Backup modal, widget-only charts, dashboard banner resizing, improved card layout behavior, updated modern README screenshots, and multiple UI polish fixes.
 
-### Repeatable card delete fix
-
-This hotfix fixes deleting repeatable habits and goals.
-
-Deleting a repeatable card now deletes the whole repeat group, including older archived repeatable cards from the same group. This prevents archived repeatable cards from recreating the deleted card.
+New first-time installs now start with a complete Haby dashboard setup, including categories, habits, goals, widgets, dashboard layout, card positions, theme, banner size, and sample progress/history entries. Existing users are protected by a `defaultSeedApplied` marker so updates do not overwrite existing data.

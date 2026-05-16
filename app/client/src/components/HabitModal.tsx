@@ -12,7 +12,15 @@ const icons = [
 
 const unitSuggestions = ['steps', 'km', 'm', 'minutes', 'liters', 'pages'];
 
-export default function HabitModal({ mode, entityType, initialHabit, categories, onClose, onSave, onArchive }: {
+export default function HabitModal({
+  mode,
+  entityType,
+  initialHabit,
+  categories,
+  onClose,
+  onSave,
+  onArchive,
+}: {
   mode: 'create' | 'edit';
   entityType: 'standard' | 'goal';
   initialHabit?: Habit | null;
@@ -22,12 +30,32 @@ export default function HabitModal({ mode, entityType, initialHabit, categories,
   onArchive?: () => Promise<void>;
 }) {
   const initial = useMemo(() => initialHabit || {
-    name: '', description: '', categoryId: null, period: 'daily', targetCount: entityType === 'goal' ? 10 : 1, expectedPerDay: 1, repeatable: false,
-    icon: entityType === 'goal' ? '🎯' : '⭐', color: entityType === 'goal' ? '#fcd34d' : '#93c5fd',
-    cardBackgroundType: 'color', cardBackgroundValue: '', cardOverlayOpacity: 0.14, showMiniCalendar: true, showChart: true, chartType: 'line', habitType: entityType, unitLabel: ''
+    name: '',
+    description: '',
+    categoryId: null,
+    period: 'daily',
+    targetCount: entityType === 'goal' ? 10 : 1,
+    expectedPerDay: 1,
+    repeatable: false,
+    icon: entityType === 'goal' ? '🎯' : '⭐',
+    color: entityType === 'goal' ? '#fcd34d' : '#93c5fd',
+    cardBackgroundType: 'color',
+    cardBackgroundValue: '',
+    cardOverlayOpacity: 0.14,
+    showMiniCalendar: true,
+    showChart: true,
+    chartType: 'line',
+    habitType: entityType,
+    unitLabel: '',
   }, [initialHabit, entityType]);
 
-  const [form, setForm] = useState<any>({ ...initial, habitType: entityType, expectedPerDay: initial.expectedPerDay ?? 1, repeatable: Boolean(initial.repeatable) });
+  const [form, setForm] = useState<any>({
+    ...initial,
+    habitType: entityType,
+    expectedPerDay: initial.expectedPerDay ?? 1,
+    repeatable: Boolean(initial.repeatable),
+  });
+
   const [saving, setSaving] = useState(false);
   const [archiving, setArchiving] = useState(false);
 
@@ -70,7 +98,7 @@ export default function HabitModal({ mode, entityType, initialHabit, categories,
 
   return createPortal(
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-card" onClick={(event) => event.stopPropagation()}>
+      <div className="modal-card habit-modal" onClick={(event) => event.stopPropagation()}>
         <div className="row-between">
           <h3>{mode === 'create' ? (isGoal ? '+ Add Goal' : '+ Add Habit') : (isGoal ? 'Edit Goal' : 'Edit Habit')}</h3>
           <button type="button" className="ghost-btn small-btn" onClick={onClose}>Close</button>
@@ -94,47 +122,52 @@ export default function HabitModal({ mode, entityType, initialHabit, categories,
           </select>
         </label>
 
-        <label>
-          {isGoal ? 'Goal target' : 'Target amount'}
-          <input type="number" min="1" value={form.targetCount} onChange={(event) => setForm({ ...form, targetCount: Number(event.target.value || 1) })} />
-        </label>
-
-        <label>
-          Expected per day (for extra)
-          <input type="number" min="1" value={form.expectedPerDay ?? 1} onChange={(event) => setForm({ ...form, expectedPerDay: Number(event.target.value || 1) })} />
-        </label>
-
         {isGoal ? (
+          <div className="habit-field-row habit-field-row-three">
+            <label>
+              Goal target
+              <input type="number" min="1" value={form.targetCount} onChange={(event) => setForm({ ...form, targetCount: Number(event.target.value || 1) })} />
+            </label>
+
+            <label>
+              Expected per day (for extra)
+              <input type="number" min="1" value={form.expectedPerDay ?? 1} onChange={(event) => setForm({ ...form, expectedPerDay: Number(event.target.value || 1) })} />
+            </label>
+
+            <label>
+              Unit label
+              <input list="unit-options" placeholder="Write any unit label" value={form.unitLabel} onChange={(event) => setForm({ ...form, unitLabel: event.target.value })} />
+              <datalist id="unit-options">
+                {unitSuggestions.map((unit) => <option key={unit} value={unit} />)}
+              </datalist>
+            </label>
+          </div>
+        ) : (
+          <div className="habit-field-row habit-field-row-two">
+            <label>
+              Target amount
+              <input type="number" min="1" value={form.targetCount} onChange={(event) => setForm({ ...form, targetCount: Number(event.target.value || 1) })} />
+            </label>
+
+            <label>
+              Expected per day (for extra)
+              <input type="number" min="1" value={form.expectedPerDay ?? 1} onChange={(event) => setForm({ ...form, expectedPerDay: Number(event.target.value || 1) })} />
+            </label>
+          </div>
+        )}
+
+        <div className="habit-toggle-row">
           <label>
-            Unit label
-            <input list="unit-options" placeholder="Write any unit label" value={form.unitLabel} onChange={(event) => setForm({ ...form, unitLabel: event.target.value })} />
-            <datalist id="unit-options">
-              {unitSuggestions.map((unit) => <option key={unit} value={unit} />)}
-            </datalist>
+            Period
+            <div className="tiny-toggle">
+              {(['daily', 'weekly', 'monthly'] as const).map((period) => (
+                <span key={period} className={form.period === period ? 'active' : ''} onClick={() => setForm({ ...form, period })}>
+                  {period === 'daily' ? 'Daily' : period === 'weekly' ? 'Weekly' : 'Monthly'}
+                </span>
+              ))}
+            </div>
           </label>
-        ) : null}
-
-        <label>
-          Period
-          <div className="tiny-toggle">
-            {(['daily', 'weekly', 'monthly'] as const).map((period) => (
-              <span key={period} className={form.period === period ? 'active' : ''} onClick={() => setForm({ ...form, period })}>
-                {period === 'daily' ? 'Daily' : period === 'weekly' ? 'Weekly' : 'Monthly'}
-              </span>
-            ))}
-          </div>
-        </label>
-
-        <label>
-          Chart type
-          <div className="tiny-toggle">
-            {(['line', 'column', 'pie'] as const).map((chartType) => (
-              <span key={chartType} className={form.chartType === chartType ? 'active' : ''} onClick={() => setForm({ ...form, chartType })}>
-                {chartType === 'pie' ? 'Pie' : chartType === 'column' ? 'Column' : 'Line'}
-              </span>
-            ))}
-          </div>
-        </label>
+        </div>
 
         <label>
           Icon
@@ -160,20 +193,16 @@ export default function HabitModal({ mode, entityType, initialHabit, categories,
           </div>
         </div>
 
-        <label className="inline-check">
-          <input type="checkbox" checked={form.showMiniCalendar} onChange={(event) => setForm({ ...form, showMiniCalendar: event.target.checked })} />
-          Show mini calendar
-        </label>
-
-        <label className="inline-check">
-          <input type="checkbox" checked={form.showChart} onChange={(event) => setForm({ ...form, showChart: event.target.checked })} />
-          Show chart
-        </label>
-
-        <label className="inline-check">
-          <input type="checkbox" checked={Boolean(form.repeatable)} onChange={(event) => setForm({ ...form, repeatable: event.target.checked })} />
-          {repeatableLabel}
-        </label>
+        <div className="habit-check-row">
+          <label className="inline-check">
+            <input type="checkbox" checked={form.showMiniCalendar} onChange={(event) => setForm({ ...form, showMiniCalendar: event.target.checked })} />
+            Show mini calendar
+          </label>
+          <label className="inline-check">
+            <input type="checkbox" checked={Boolean(form.repeatable)} onChange={(event) => setForm({ ...form, repeatable: event.target.checked })} />
+            {repeatableLabel}
+          </label>
+        </div>
 
         <div className="inline-actions wrap-gap modal-submit-row">
           {mode === 'edit' && onArchive ? (

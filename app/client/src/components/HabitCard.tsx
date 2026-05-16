@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
-import HabitChart from './HabitChart';
 import MonthlyMiniCalendar from './MonthlyMiniCalendar';
 import type { Habit, HistoryPoint } from '../store/useStore';
 
@@ -62,9 +61,7 @@ export default function HabitCard({ habit, history, onIncrement, onDecrement, on
     ? Math.max(0, Math.min(100, Math.round((habit.progress.current / habit.targetCount) * 100)))
     : 0;
 
-  const effectiveChartVisible = typeof chartVisible === 'boolean' ? chartVisible : habit.showChart;
-  const effectiveChartHistory = chartHistory || history;
-  const hasVisual = effectiveChartVisible || habit.showMiniCalendar;
+  const hasVisual = habit.showMiniCalendar;
   const visualWidthClass = useMemo(() => hasVisual ? 'habit-card-wide' : 'habit-card-compact', [hasVisual]);
   const goalUnit = habit.unitLabel || 'unit';
 
@@ -105,7 +102,7 @@ export default function HabitCard({ habit, history, onIncrement, onDecrement, on
             <span className="unit-pill">{goalUnit}</span>
             <button
               type="button"
-              className="primary-btn small-btn"
+              className="ghost-btn small-btn goal-save-btn"
               onClick={async () => {
                 const amount = Number(goalInput);
                 if (!Number.isFinite(amount) || amount <= 0) return;
@@ -118,8 +115,6 @@ export default function HabitCard({ habit, history, onIncrement, onDecrement, on
           </div>
         </>
       ) : null}
-
-      {effectiveChartVisible ? <HabitChart history={effectiveChartHistory} range={chartRange} type={habit.chartType as 'line' | 'column' | 'pie'} color={habit.color} target={habit.targetCount} expectedPerDay={habit.expectedPerDay || habit.targetCount || 1} /> : null}
       {habit.showMiniCalendar ? <MonthlyMiniCalendar history={history} target={habit.targetCount} expectedPerDay={habit.expectedPerDay} createdAt={habit.createdAt} variant="card" /> : null}
 
       <div className="card-footer-actions content-width-block">

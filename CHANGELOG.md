@@ -1,5 +1,48 @@
 # Changelog
 
+
+## v1.2.0
+
+### Default first-run experience
+
+- Replaced the old demo seed with a full default dashboard seed based on a real Haby setup.
+- New first-time users now start with a complete dashboard layout instead of a minimal demo.
+- Added a `defaultSeedApplied` marker so future updates do not reseed or overwrite existing user data.
+
+### Backup and import
+
+- Moved Export/Import into a dedicated Backup modal under the Control Panel.
+- Added separate Export and Import views with preview information.
+- Backup now includes widgets, widget order, widget configuration, dashboard settings, card positions, and banner size.
+- Import now restores widgets and remaps card layout positions to newly imported habit and goal IDs.
+
+### Dashboard and layout
+
+- Added resizable dashboard banner height.
+- Active Habits, Active Goals, and Archived sections now follow the resized banner layout.
+
+### Widgets
+
+- Habit and goal charts are now widget-only.
+- Removed chart rendering from Habit and Goal cards.
+- Remove Widgets still allows removing existing widgets, including widgets that were created before their source card was archived.
+- Improved widget panel styling and hover behavior across modern and classic themes.
+
+### Cards and modals
+
+- Removed Show chart and Chart type controls from Add Habit, Add Goal, and Edit modals.
+- Improved card minimum sizing so card action buttons fit in one row.
+- Changed Goal card Save button styling to match Edit and Archive card actions.
+- Account settings now opens with only the Profile section expanded by default.
+
+### UI polish
+
+- Added the new Modern theme.
+- Improved classic theme borders for Info and Widgets panels.
+- Refined modern and classic hover behavior for right-side panel controls.
+- Updated default profile/icon assets.
+
+
 ## v1.1.1
 
 ### Fixed

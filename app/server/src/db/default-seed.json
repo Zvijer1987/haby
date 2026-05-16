@@ -1,0 +1,617 @@
+{
+  "categories": [
+    {
+      "name": "Focus"
+    },
+    {
+      "name": "Health"
+    },
+    {
+      "name": "Movement"
+    },
+    {
+      "name": "Recovery"
+    },
+    {
+      "name": "aaaa"
+    }
+  ],
+  "habits": [
+    {
+      "id": 77,
+      "user_id": 1,
+      "name": "Water intake",
+      "description": "A daily hydration habit with a column chart and a mini calendar.",
+      "category_id": null,
+      "period": "daily",
+      "target_count": 12,
+      "expected_per_day": 12,
+      "repeatable": 0,
+      "repeat_group": "",
+      "repeat_index": 1,
+      "repeat_base_name": "Water intake",
+      "repeat_anchor_date": "2026-05-12",
+      "icon": "💧",
+      "color": "#86efac",
+      "visualization": "bar",
+      "allow_overcomplete": 1,
+      "is_archived": 0,
+      "created_at": "2026-05-12T19:09:38.234Z",
+      "updated_at": "2026-05-12T21:31:05.128Z",
+      "card_background_type": "color",
+      "card_background_value": "#86efac",
+      "card_overlay_opacity": 0.14,
+      "show_mini_calendar": 1,
+      "show_chart": 1,
+      "chart_type": "column",
+      "habit_type": "standard",
+      "unit_label": "",
+      "sort_order": 0,
+      "categoryName": null
+    },
+    {
+      "id": 78,
+      "user_id": 1,
+      "name": "Focus block",
+      "description": "A focused work habit with a line chart and a mini calendar.",
+      "category_id": null,
+      "period": "daily",
+      "target_count": 4,
+      "expected_per_day": 4,
+      "repeatable": 0,
+      "repeat_group": "",
+      "repeat_index": 1,
+      "repeat_base_name": "Focus block",
+      "repeat_anchor_date": "2026-05-12",
+      "icon": "🧠",
+      "color": "#c4b5fd",
+      "visualization": "bar",
+      "allow_overcomplete": 1,
+      "is_archived": 0,
+      "created_at": "2026-05-12T19:09:38.234Z",
+      "updated_at": "2026-05-12T23:37:07.692Z",
+      "card_background_type": "color",
+      "card_background_value": "#c4b5fd",
+      "card_overlay_opacity": 0.14,
+      "show_mini_calendar": 1,
+      "show_chart": 1,
+      "chart_type": "column",
+      "habit_type": "standard",
+      "unit_label": "",
+      "sort_order": 1,
+      "categoryName": null
+    },
+    {
+      "id": 79,
+      "user_id": 1,
+      "name": "Mobility session",
+      "description": "A recovery habit that keeps the mini calendar visible without a chart.",
+      "category_id": null,
+      "period": "daily",
+      "target_count": 2,
+      "expected_per_day": 2,
+      "repeatable": 0,
+      "repeat_group": "",
+      "repeat_index": 1,
+      "repeat_base_name": "Mobility session",
+      "repeat_anchor_date": "2026-05-12",
+      "icon": "🧘",
+      "color": "#fcd34d",
+      "visualization": "bar",
+      "allow_overcomplete": 1,
+      "is_archived": 0,
+      "created_at": "2026-05-12T19:09:38.234Z",
+      "updated_at": "2026-05-12T19:09:38.234Z",
+      "card_background_type": "color",
+      "card_background_value": "#ffffff",
+      "card_overlay_opacity": 0.14,
+      "show_mini_calendar": 1,
+      "show_chart": 0,
+      "chart_type": "line",
+      "habit_type": "standard",
+      "unit_label": "",
+      "sort_order": 2,
+      "categoryName": null
+    },
+    {
+      "id": 80,
+      "user_id": 1,
+      "name": "Daily vitamins",
+      "description": "A simple daily habit card without mini calendar.",
+      "category_id": null,
+      "period": "daily",
+      "target_count": 1,
+      "expected_per_day": 1,
+      "repeatable": 0,
+      "repeat_group": "",
+      "repeat_index": 1,
+      "repeat_base_name": "Daily vitamins",
+      "repeat_anchor_date": "2026-05-12",
+      "icon": "💊",
+      "color": "#93c5fd",
+      "visualization": "bar",
+      "allow_overcomplete": 1,
+      "is_archived": 0,
+      "created_at": "2026-05-12T19:09:38.234Z",
+      "updated_at": "2026-05-14T22:38:49.765Z",
+      "card_background_type": "color",
+      "card_background_value": "#93c5fd",
+      "card_overlay_opacity": 0.14,
+      "show_mini_calendar": 0,
+      "show_chart": 0,
+      "chart_type": "column",
+      "habit_type": "standard",
+      "unit_label": "",
+      "sort_order": 3,
+      "categoryName": null
+    },
+    {
+      "id": 81,
+      "user_id": 1,
+      "name": "Daily steps",
+      "description": "A bigger numeric goal with a line chart and mini calendar.",
+      "category_id": null,
+      "period": "daily",
+      "target_count": 10000,
+      "expected_per_day": 10000,
+      "repeatable": 0,
+      "repeat_group": "",
+      "repeat_index": 1,
+      "repeat_base_name": "Daily steps",
+      "repeat_anchor_date": "2026-05-12",
+      "icon": "👟",
+      "color": "#67e8f9",
+      "visualization": "bar",
+      "allow_overcomplete": 1,
+      "is_archived": 0,
+      "created_at": "2026-05-12T19:09:38.234Z",
+      "updated_at": "2026-05-12T19:09:38.234Z",
+      "card_background_type": "color",
+      "card_background_value": "#ffffff",
+      "card_overlay_opacity": 0.14,
+      "show_mini_calendar": 1,
+      "show_chart": 1,
+      "chart_type": "line",
+      "habit_type": "goal",
+      "unit_label": "steps",
+      "sort_order": 4,
+      "categoryName": null
+    },
+    {
+      "id": 82,
+      "user_id": 1,
+      "name": "Bike distance",
+      "description": "A distance goal that highlights the column chart layout.",
+      "category_id": null,
+      "period": "daily",
+      "target_count": 25,
+      "expected_per_day": 25,
+      "repeatable": 0,
+      "repeat_group": "",
+      "repeat_index": 1,
+      "repeat_base_name": "Bike distance",
+      "repeat_anchor_date": "2026-05-12",
+      "icon": "🚴",
+      "color": "#f9a8d4",
+      "visualization": "bar",
+      "allow_overcomplete": 1,
+      "is_archived": 0,
+      "created_at": "2026-05-12T19:09:38.234Z",
+      "updated_at": "2026-05-12T19:09:38.234Z",
+      "card_background_type": "color",
+      "card_background_value": "#ffffff",
+      "card_overlay_opacity": 0.14,
+      "show_mini_calendar": 0,
+      "show_chart": 1,
+      "chart_type": "column",
+      "habit_type": "goal",
+      "unit_label": "km",
+      "sort_order": 5,
+      "categoryName": null
+    },
+    {
+      "id": 83,
+      "user_id": 1,
+      "name": "Reading time",
+      "description": "A time-based goal that uses the pie chart view.",
+      "category_id": null,
+      "period": "daily",
+      "target_count": 60,
+      "expected_per_day": 60,
+      "repeatable": 0,
+      "repeat_group": "",
+      "repeat_index": 1,
+      "repeat_base_name": "Reading time",
+      "repeat_anchor_date": "2026-05-12",
+      "icon": "📚",
+      "color": "#93c5fd",
+      "visualization": "bar",
+      "allow_overcomplete": 1,
+      "is_archived": 0,
+      "created_at": "2026-05-12T19:09:38.234Z",
+      "updated_at": "2026-05-12T19:09:38.234Z",
+      "card_background_type": "color",
+      "card_background_value": "#ffffff",
+      "card_overlay_opacity": 0.14,
+      "show_mini_calendar": 0,
+      "show_chart": 1,
+      "chart_type": "pie",
+      "habit_type": "goal",
+      "unit_label": "min",
+      "sort_order": 6,
+      "categoryName": null
+    },
+    {
+      "id": 84,
+      "user_id": 1,
+      "name": "Sleep target",
+      "description": "A clean goal card with a calendar-first layout.",
+      "category_id": null,
+      "period": "daily",
+      "target_count": 8,
+      "expected_per_day": 8,
+      "repeatable": 0,
+      "repeat_group": "",
+      "repeat_index": 1,
+      "repeat_base_name": "Sleep target",
+      "repeat_anchor_date": "2026-05-12",
+      "icon": "🌙",
+      "color": "#a5b4fc",
+      "visualization": "bar",
+      "allow_overcomplete": 1,
+      "is_archived": 0,
+      "created_at": "2026-05-12T19:09:38.234Z",
+      "updated_at": "2026-05-12T19:09:38.234Z",
+      "card_background_type": "color",
+      "card_background_value": "#ffffff",
+      "card_overlay_opacity": 0.14,
+      "show_mini_calendar": 1,
+      "show_chart": 0,
+      "chart_type": "line",
+      "habit_type": "goal",
+      "unit_label": "hours",
+      "sort_order": 7,
+      "categoryName": null
+    },
+    {
+      "id": 85,
+      "user_id": 1,
+      "name": "Archived stretch routine",
+      "description": "An archived sample card so the archive section is visible immediately.",
+      "category_id": null,
+      "period": "daily",
+      "target_count": 7,
+      "expected_per_day": 7,
+      "repeatable": 0,
+      "repeat_group": "",
+      "repeat_index": 1,
+      "repeat_base_name": "Archived stretch routine",
+      "repeat_anchor_date": "2026-05-12",
+      "icon": "🗂️",
+      "color": "#cbd5e1",
+      "visualization": "bar",
+      "allow_overcomplete": 1,
+      "is_archived": 1,
+      "created_at": "2026-05-12T19:09:38.234Z",
+      "updated_at": "2026-05-12T19:09:38.234Z",
+      "card_background_type": "color",
+      "card_background_value": "#ffffff",
+      "card_overlay_opacity": 0.14,
+      "show_mini_calendar": 0,
+      "show_chart": 0,
+      "chart_type": "column",
+      "habit_type": "standard",
+      "unit_label": "",
+      "sort_order": 8,
+      "categoryName": null
+    },
+    {
+      "id": 86,
+      "user_id": 1,
+      "name": "Call mom (Day 1)",
+      "description": "Daily check up on her.",
+      "category_id": 1,
+      "period": "daily",
+      "target_count": 1,
+      "expected_per_day": 1,
+      "repeatable": 1,
+      "repeat_group": "grp_1778841045875_vt3ziv",
+      "repeat_index": 1,
+      "repeat_base_name": "Call mom",
+      "repeat_anchor_date": "2026-05-15",
+      "icon": "📝",
+      "color": "#fd91e5",
+      "visualization": "bar",
+      "allow_overcomplete": 1,
+      "is_archived": 1,
+      "created_at": "2026-05-15T10:30:45.876Z",
+      "updated_at": "2026-05-15T23:07:25.064Z",
+      "card_background_type": "color",
+      "card_background_value": "#fd91e5",
+      "card_overlay_opacity": 0.14,
+      "show_mini_calendar": 1,
+      "show_chart": 1,
+      "chart_type": "line",
+      "habit_type": "standard",
+      "unit_label": "",
+      "sort_order": 9,
+      "categoryName": "Health"
+    },
+    {
+      "id": 87,
+      "user_id": 1,
+      "name": "Call mom (Day 2)",
+      "description": "Daily check up on her.",
+      "category_id": 1,
+      "period": "daily",
+      "target_count": 1,
+      "expected_per_day": 1,
+      "repeatable": 1,
+      "repeat_group": "grp_1778841045875_vt3ziv",
+      "repeat_index": 2,
+      "repeat_base_name": "Call mom",
+      "repeat_anchor_date": "2026-05-15",
+      "icon": "📝",
+      "color": "#fd91e5",
+      "visualization": "bar",
+      "allow_overcomplete": 1,
+      "is_archived": 0,
+      "created_at": "2026-05-15T22:57:11.914Z",
+      "updated_at": "2026-05-15T23:07:25.064Z",
+      "card_background_type": "color",
+      "card_background_value": "#fd91e5",
+      "card_overlay_opacity": 0.14,
+      "show_mini_calendar": 1,
+      "show_chart": 1,
+      "chart_type": "line",
+      "habit_type": "standard",
+      "unit_label": "",
+      "sort_order": 10,
+      "categoryName": "Health"
+    }
+  ],
+  "entries": [
+    {
+      "id": 134,
+      "habit_id": 77,
+      "entry_date": "2026-05-12",
+      "amount": 4,
+      "created_at": "2026-05-12T19:09:38.234Z"
+    },
+    {
+      "id": 135,
+      "habit_id": 78,
+      "entry_date": "2026-05-12",
+      "amount": 1,
+      "created_at": "2026-05-12T19:09:38.234Z"
+    },
+    {
+      "id": 136,
+      "habit_id": 79,
+      "entry_date": "2026-05-12",
+      "amount": 1,
+      "created_at": "2026-05-12T19:09:38.234Z"
+    },
+    {
+      "id": 137,
+      "habit_id": 80,
+      "entry_date": "2026-05-12",
+      "amount": 1,
+      "created_at": "2026-05-12T19:09:38.234Z"
+    },
+    {
+      "id": 138,
+      "habit_id": 81,
+      "entry_date": "2026-05-12",
+      "amount": 6000,
+      "created_at": "2026-05-12T19:09:38.234Z"
+    },
+    {
+      "id": 139,
+      "habit_id": 82,
+      "entry_date": "2026-05-12",
+      "amount": 15,
+      "created_at": "2026-05-12T19:09:38.234Z"
+    },
+    {
+      "id": 140,
+      "habit_id": 83,
+      "entry_date": "2026-05-12",
+      "amount": 36,
+      "created_at": "2026-05-12T19:09:38.234Z"
+    },
+    {
+      "id": 141,
+      "habit_id": 84,
+      "entry_date": "2026-05-12",
+      "amount": 5,
+      "created_at": "2026-05-12T19:09:38.234Z"
+    },
+    {
+      "id": 142,
+      "habit_id": 85,
+      "entry_date": "2026-05-12",
+      "amount": 2,
+      "created_at": "2026-05-12T19:09:38.234Z"
+    },
+    {
+      "id": 143,
+      "habit_id": 77,
+      "entry_date": "2026-05-14",
+      "amount": 1,
+      "created_at": "2026-05-14T13:09:01.736Z"
+    },
+    {
+      "id": 144,
+      "habit_id": 78,
+      "entry_date": "2026-05-14",
+      "amount": 1,
+      "created_at": "2026-05-14T13:09:02.721Z"
+    },
+    {
+      "id": 145,
+      "habit_id": 79,
+      "entry_date": "2026-05-14",
+      "amount": 1,
+      "created_at": "2026-05-14T13:09:04.240Z"
+    },
+    {
+      "id": 146,
+      "habit_id": 79,
+      "entry_date": "2026-05-15",
+      "amount": 8,
+      "created_at": "2026-05-15T01:37:19.390Z"
+    },
+    {
+      "id": 147,
+      "habit_id": 81,
+      "entry_date": "2026-05-15",
+      "amount": 22000,
+      "created_at": "2026-05-14T22:52:15.927Z"
+    },
+    {
+      "id": 148,
+      "habit_id": 83,
+      "entry_date": "2026-05-15",
+      "amount": 20,
+      "created_at": "2026-05-14T22:51:57.455Z"
+    },
+    {
+      "id": 149,
+      "habit_id": 84,
+      "entry_date": "2026-05-15",
+      "amount": 5,
+      "created_at": "2026-05-14T22:52:04.214Z"
+    },
+    {
+      "id": 151,
+      "habit_id": 77,
+      "entry_date": "2026-05-16",
+      "amount": 6,
+      "created_at": "2026-05-15T23:09:15.853Z"
+    },
+    {
+      "id": 150,
+      "habit_id": 80,
+      "entry_date": "2026-05-16",
+      "amount": 1,
+      "created_at": "2026-05-15T23:09:12.550Z"
+    },
+    {
+      "id": 157,
+      "habit_id": 81,
+      "entry_date": "2026-05-16",
+      "amount": 222,
+      "created_at": "2026-05-15T23:09:23.483Z"
+    },
+    {
+      "id": 158,
+      "habit_id": 82,
+      "entry_date": "2026-05-16",
+      "amount": 17,
+      "created_at": "2026-05-15T23:09:28.828Z"
+    },
+    {
+      "id": 160,
+      "habit_id": 83,
+      "entry_date": "2026-05-16",
+      "amount": 55,
+      "created_at": "2026-05-15T23:09:37.811Z"
+    },
+    {
+      "id": 159,
+      "habit_id": 84,
+      "entry_date": "2026-05-16",
+      "amount": 11,
+      "created_at": "2026-05-15T23:09:31.871Z"
+    }
+  ],
+  "settings": [
+    {
+      "key": "dashboardBackground",
+      "value": "/haby-dashboard-light-v5.png"
+    },
+    {
+      "key": "dashboardBackgroundMode",
+      "value": "center"
+    },
+    {
+      "key": "dashboardBackgroundPositionX",
+      "value": "50"
+    },
+    {
+      "key": "dashboardBackgroundPositionY",
+      "value": "50"
+    },
+    {
+      "key": "dashboardBackgroundZoom",
+      "value": "100"
+    },
+    {
+      "key": "dashboardDescription",
+      "value": "Track habits, goals, charts, widgets, categories, and progress in one place."
+    },
+    {
+      "key": "dashboardHeroHeight",
+      "value": "298"
+    },
+    {
+      "key": "dashboardOpacity",
+      "value": "0.14"
+    },
+    {
+      "key": "dashboardTitle",
+      "value": "Haby Dashboard"
+    },
+    {
+      "key": "goalLayout",
+      "value": "{\"goal-81\":{\"x\":0,\"y\":0},\"goal-82\":{\"x\":389,\"y\":0},\"goal-84\":{\"x\":809,\"y\":0},\"goal-83\":{\"x\":439,\"y\":254}}"
+    },
+    {
+      "key": "habitLayout",
+      "value": "{\"habit-77\":{\"x\":0,\"y\":0},\"habit-80\":{\"x\":419,\"y\":0},\"habit-79\":{\"x\":855,\"y\":0},\"habit-78\":{\"x\":1209,\"y\":0},\"habit-87\":{\"x\":423,\"y\":166}}"
+    },
+    {
+      "key": "theme",
+      "value": "light"
+    },
+    {
+      "key": "uiStyle",
+      "value": "modern"
+    }
+  ],
+  "widgets": [
+    {
+      "id": 25,
+      "type": "calendar",
+      "label": "Calendar",
+      "config_json": "{}",
+      "sort_order": 0,
+      "created_at": "2026-05-12T19:09:38.234Z"
+    },
+    {
+      "id": 27,
+      "type": "doneList",
+      "label": "Today list",
+      "config_json": "{}",
+      "sort_order": 1,
+      "created_at": "2026-05-12T19:09:38.234Z"
+    },
+    {
+      "id": 26,
+      "type": "history",
+      "label": "Overall history",
+      "config_json": "{\"type\":\"column\",\"days\":7}",
+      "sort_order": 2,
+      "created_at": "2026-05-12T19:09:38.234Z"
+    },
+    {
+      "id": 28,
+      "type": "habitChart",
+      "label": "Sleep Target",
+      "config_json": "{\"habitId\":18,\"type\":\"column\",\"days\":14}",
+      "sort_order": 3,
+      "created_at": "2026-05-12T23:28:15.598Z"
+    }
+  ]
+}
